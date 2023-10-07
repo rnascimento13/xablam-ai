@@ -2,6 +2,8 @@ import Navbar from "@/components/navbar";
 import { Sidebar } from "@/components/sidebar";
 import { checkSubscription } from "@/lib/subscription";
 import { getApiLimitCount } from "@/lib/api-limit";
+import { getServerSession } from "next-auth/next";
+import { redirect } from "next/navigation";
 
 const DashboardLayout = async ({
   children,
@@ -10,7 +12,11 @@ const DashboardLayout = async ({
 }) => {
   const apiLimitCount = await getApiLimitCount();
   const isPro = await checkSubscription();
+  const session = await getServerSession();
 
+  if (!session || !session.user) {
+    redirect("/api/auth/signin");
+  }
   return ( 
     <div className="h-full relative">
       <div className="hidden h-full md:flex md:w-72 md:flex-col md:fixed md:inset-y-0 z-80 bg-gray-900">

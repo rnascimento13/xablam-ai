@@ -1,10 +1,11 @@
-import { auth } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 // import { Configuration, OpenAIApi } from "openai";
 
 import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { json } from "stream/consumers";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 
 
@@ -20,7 +21,11 @@ export async function POST(
   req: Request
 ) {
   try {
-    const { userId } = auth();
+    const session = await getServerSession(authOptions)
+    const userId = session?.user?.name!
+    // const { userId } = auth();
+    // TODO: userId instead username
+  
     const body = await req.json();
     const { prompt, amount = 1, resolution = "512x512" } = body;
 

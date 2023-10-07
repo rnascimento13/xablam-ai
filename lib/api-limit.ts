@@ -1,11 +1,13 @@
-import { auth } from "@clerk/nextjs";
-
 import prismadb from "@/lib/prismadb";
 import { MAX_FREE_COUNTS } from "@/constants";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../app/api/auth/[...nextauth]/route";
 
 export const incrementApiLimit = async () => {
-  const { userId } = auth();
-
+  const session = await getServerSession(authOptions)
+  const userId = session?.user?.name!
+  // const { userId } = auth();
+  // TODO: userId instead username
   if (!userId) {
     return;
   }
@@ -27,7 +29,10 @@ export const incrementApiLimit = async () => {
 };
 
 export const checkApiLimit = async () => {
-  const { userId } = auth();
+  const session = await getServerSession(authOptions)
+  const userId = session?.user?.name!
+  // const { userId } = auth();
+  // TODO: userId instead username
 
   if (!userId) {
     return false;
@@ -45,7 +50,10 @@ export const checkApiLimit = async () => {
 };
 
 export const getApiLimitCount = async () => {
-  const { userId } = auth();
+  const session = await getServerSession(authOptions)
+  const userId = session?.user?.name!
+  // const { userId } = auth();
+  // TODO: userId instead username
 
   if (!userId) {
     return 0;

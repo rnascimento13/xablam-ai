@@ -1,5 +1,6 @@
-import { auth } from "@clerk/nextjs";
+import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
+import { authOptions } from "../auth/[...nextauth]/route";
 // import { Configuration, OpenAIApi } from "openai";
 
 // import { checkSubscription } from "@/lib/subscription";
@@ -15,7 +16,11 @@ export async function POST(
   req: Request
 ) {
   try {
-    const { userId } = auth();
+    const session = await getServerSession(authOptions)
+    const userId = session?.user?.name!
+    // const { userId } = auth();
+    // TODO: userId instead username
+
     const body = await req.json();
     const headers = await req.headers
 

@@ -1,18 +1,23 @@
-import { auth, currentUser } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
 
 import prismadb from "@/lib/prismadb";
 import { stripe } from "@/lib/stripe";
 import { absoluteUrl } from "@/lib/utils";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "../auth/[...nextauth]/route";
 
 const settingsUrl = absoluteUrl("/settings");
 
 export async function GET() {
   try {
-    const { userId } = auth();
-    const user = await currentUser();
+    const session = await getServerSession(authOptions)
+    const userId = session?.user?.name!
+    const emailAddress = session?.user?.email!
+    // const { userId } = auth();
+    // const user = await currentUser();
+    // TODO: userId instead username
 
-    if (!userId || !user) {
+    if (!userId || !emailAddress) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
@@ -37,7 +42,7 @@ export async function GET() {
       payment_method_types: ["card"],
       mode: "subscription",
       billing_address_collection: "auto",
-      customer_email: user.emailAddresses[0].emailAddress,
+      customer_email: emailAddress,
       line_items: [
         {
           price_data: {

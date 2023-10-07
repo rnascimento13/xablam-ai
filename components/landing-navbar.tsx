@@ -3,16 +3,21 @@
 import { Montserrat } from "next/font/google";
 import Image from "next/image"
 import Link from "next/link"
-import { useAuth } from "@clerk/nextjs";
+import { useSession, signIn, signOut } from "next-auth/react"
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { sign } from "crypto";
+import SignButton from "./sign-button";
 
 const font = Montserrat({ weight: '600', subsets: ['latin'] });
 
 export const LandingNavbar = () => {
-  const { isSignedIn } = useAuth();
+  const { data: session } = useSession()
+  const dashboardUrl = 'http://localhost:3000/dashboard'
+  const landingUrl = 'http://localhost:3000'
 
+  
   return (
     <nav className="p-4 bg-transparent flex items-center justify-between">
       <Link href="/" className="flex items-center">
@@ -23,13 +28,23 @@ export const LandingNavbar = () => {
           Genius
         </h1>
       </Link>
-      <div className="flex items-center gap-x-2">
-        <Link href={isSignedIn ? "/dashboard" : "/sign-up"}>
-          <Button variant="outline" className="rounded-full">
+      {/* <SignButton/> */}
+      {!!session ? (
+        <div className="flex items-center gap-x-2">
+          <Link href="/dashboard">
+            <Button variant="outline" className="rounded-full">
+              Dashboard
+            </Button>
+          </Link>
+        </div>
+      ) : (
+        <div className="flex items-center gap-x-2">
+          <br />
+          <button onClick={() => signIn(undefined, { callbackUrl:dashboardUrl })} className="rounded-full">
             Get Started
-          </Button>
-        </Link>
-      </div>
+          </button>
+        </div>
+      )}
     </nav>
   )
 }
