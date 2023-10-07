@@ -5,9 +5,9 @@ import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { json } from "stream/consumers";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]";
+// import { authOptions } from "../auth/[...nextauth]";
 // import { authOptions } from "../auth/[...nextauth]/route";
-
+import { authOptions } from '@/lib/auth-options'
 
 
 

@@ -4,8 +4,8 @@ import { signIn, signOut, useSession } from "next-auth/react";
 
 const SignButton = () => {
   const { data: session } = useSession();
-  const dashboardUrl = 'http://localhost:3000/dashboard'
-  const landingUrl = 'http://localhost:3000'
+  const dashboardUrl = '/dashboard/'
+  const landingUrl = '/'
  
   if (session) {
     return (

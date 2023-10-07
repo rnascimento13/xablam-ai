@@ -4,8 +4,9 @@ import prismadb from "@/lib/prismadb";
 import { stripe } from "@/lib/stripe";
 import { absoluteUrl } from "@/lib/utils";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]";
+// import { authOptions } from "../auth/[...nextauth]";
 // import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth-options'
 
 const settingsUrl = absoluteUrl("/settings");
 

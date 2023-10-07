@@ -14,8 +14,8 @@ const font = Montserrat({ weight: '600', subsets: ['latin'] });
 
 export const LandingNavbar = () => {
   const { data: session } = useSession()
-  const dashboardUrl = 'http://localhost:3000/dashboard'
-  const landingUrl = 'http://localhost:3000'
+  const dashboardUrl = '/dashboard'
+  const landingUrl = '/'
 
   
   return (
@@ -36,6 +36,9 @@ export const LandingNavbar = () => {
               Dashboard
             </Button>
           </Link>
+          {/* <button onClick={() => signOut()} className="rounded-full">
+            SignOut
+          </button> */}
         </div>
       ) : (
         <div className="flex items-center gap-x-2">

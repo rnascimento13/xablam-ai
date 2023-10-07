@@ -4,8 +4,9 @@ import { ChatCompletionRequestMessage, Configuration, OpenAIApi } from "openai";
 import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../auth/[...nextauth]";
+// import { authOptions } from "../auth/[...nextauth]";
 // import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from '@/lib/auth-options'
 
 const configuration = new Configuration({
   apiKey: process.env.OPENAI_API_KEY,
