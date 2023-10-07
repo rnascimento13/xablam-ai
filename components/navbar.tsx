@@ -4,7 +4,9 @@ import { MobileSidebar } from "@/components/mobile-sidebar";
 import { getApiLimitCount } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+import { authOptions } from "@/app/api/auth/[...nextauth]";
+// import { authOptions } from "@/app/api/auth/[...nextauth]/route";
+
 import SignButton from "./sign-button";
 
 const Navbar = async () => {

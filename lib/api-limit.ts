@@ -1,7 +1,8 @@
 import prismadb from "@/lib/prismadb";
 import { MAX_FREE_COUNTS } from "@/constants";
 import { getServerSession } from "next-auth/next";
-import { authOptions } from "../app/api/auth/[...nextauth]/route";
+import { authOptions } from "../app/api/auth/[...nextauth]";
+// import { authOptions } from "../app/api/auth/[...nextauth]/route";
 
 export const incrementApiLimit = async () => {
   const session = await getServerSession(authOptions)

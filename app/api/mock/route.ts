@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth/next";
 import { NextResponse } from "next/server";
-import { authOptions } from "../auth/[...nextauth]/route";
+import { authOptions } from "../auth/[...nextauth]";
+// import { authOptions } from "../auth/[...nextauth]/route";
 // import { Configuration, OpenAIApi } from "openai";
 
 // import { checkSubscription } from "@/lib/subscription";

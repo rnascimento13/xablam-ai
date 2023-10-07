@@ -1,5 +1,7 @@
 import { getServerSession } from "next-auth/next"
-import { authOptions } from "../app/api/auth/[...nextauth]/route";
+import { authOptions } from "../app/api/auth/[...nextauth]";
+// import { authOptions } from "../app/api/auth/[...nextauth]/route";
+
 import prismadb from "@/lib/prismadb";
 
 const DAY_IN_MS = 86_400_000;
