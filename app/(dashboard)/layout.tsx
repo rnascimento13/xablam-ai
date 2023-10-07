@@ -15,7 +15,7 @@ const DashboardLayout = async ({
   const session = await getServerSession();
 
   if (!session || !session.user) {
-    redirect("/api/auth/signin");
+    redirect("/api/auth/signin?callback=/dashboard");
   }
   return ( 
     <div className="h-full relative">
