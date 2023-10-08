@@ -1,11 +1,12 @@
 import Stripe from "stripe"
 import { headers } from "next/headers"
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth/next"
 
 import prismadb from "@/lib/prismadb"
 import { stripe } from "@/lib/stripe"
 import { mountUserId } from "@/lib/utils"
-import { getServerSession } from "next-auth/next"
+
 import { authOptions } from "@/lib/auth-options"
 
 export async function POST(req: Request) {
