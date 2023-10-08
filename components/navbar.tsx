@@ -15,7 +15,7 @@ const Navbar = async () => {
   const session = await getServerSession(authOptions);
   const apiLimitCount = await getApiLimitCount();
   const isPro = await checkSubscription();
-
+  console.log(session)
   return ( 
     <div className="flex items-center p-4">
       <MobileSidebar isPro={isPro} apiLimitCount={apiLimitCount} />
