@@ -8,7 +8,10 @@ import { mountUserId } from "@/lib/utils"
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/auth-options"
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: Request) {
+  
   const body = await req.text()
   const signature = headers().get("Stripe-Signature") as string
 
