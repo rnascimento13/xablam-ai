@@ -9,8 +9,6 @@ import { mountUserId } from "@/lib/utils"
 
 import { authOptions } from "@/lib/auth-options"
 
-export const dynamic = 'force-static'
-
 export async function POST(req: Request) {
   
   const body = await req.text()
