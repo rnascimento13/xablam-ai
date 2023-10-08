@@ -1,12 +1,12 @@
 import type { Metadata } from 'next'
+import { getServerSession } from "next-auth";
 import { Inter } from 'next/font/google'
 
 import { ToasterProvider } from '@/components/toaster-provider'
 import { ModalProvider } from '@/components/modal-provider'
 import { CrispProvider } from '@/components/crisp-provider'
+import SessionProvider from "@/components/session-provider";
 
-import { getServerSession } from "next-auth";
-import SessionProvider from "../components/session-provider";
 import './globals.css'
 
 const font = Inter({ subsets: ['latin'] });

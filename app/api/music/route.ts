@@ -1,11 +1,9 @@
 import Replicate from "replicate";
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
 
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { checkSubscription } from "@/lib/subscription";
-import { getServerSession } from "next-auth/next";
-// import { authOptions } from "../auth/[...nextauth]";
-// import { authOptions } from "../auth/[...nextauth]/route";
 import { authOptions } from '@/lib/auth-options'
 
 const replicate = new Replicate({
@@ -17,14 +15,11 @@ export async function POST(
 ) {
   try {
     const session = await getServerSession(authOptions)
-    const userId = session?.user?.name!
-    // const { userId } = auth();
-    // TODO: userId instead username
 
     const body = await req.json();
     const { prompt  } = body;
 
-    if (!userId) {
+    if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 

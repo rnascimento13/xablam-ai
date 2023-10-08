@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth/next";
 
 import prismadb from "@/lib/prismadb";
 import { stripe } from "@/lib/stripe";
-import { absoluteUrl } from "@/lib/utils";
-import { getServerSession } from "next-auth/next";
-// import { authOptions } from "../auth/[...nextauth]";
-// import { authOptions } from "../auth/[...nextauth]/route";
+import { absoluteUrl, mountUserId } from "@/lib/utils";
 import { authOptions } from '@/lib/auth-options'
 
 const settingsUrl = absoluteUrl("/settings");
@@ -13,13 +11,14 @@ const settingsUrl = absoluteUrl("/settings");
 export async function GET() {
   try {
     const session = await getServerSession(authOptions)
-    const userId = session?.user?.name!
-    const emailAddress = session?.user?.email!
-    // const { userId } = auth();
-    // const user = await currentUser();
-    // TODO: userId instead username
 
-    if (!userId || !emailAddress) {
+    if (!session?.user) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+    const userId = mountUserId(session)
+    const emailAddress = session?.user?.email!
+
+    if (!session?.user || !emailAddress) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 

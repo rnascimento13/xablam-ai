@@ -3,20 +3,16 @@
 import { Montserrat } from "next/font/google";
 import Image from "next/image"
 import Link from "next/link"
-import { useSession, signIn, signOut } from "next-auth/react"
+import { useSession, signIn } from "next-auth/react"
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { sign } from "crypto";
-import SignButton from "./sign-button";
 
 const font = Montserrat({ weight: '600', subsets: ['latin'] });
 
 export const LandingNavbar = () => {
   const { data: session } = useSession()
   const dashboardUrl = '/dashboard'
-  const landingUrl = '/'
-
   
   return (
     <nav className="p-4 bg-transparent flex items-center justify-between">
@@ -28,7 +24,6 @@ export const LandingNavbar = () => {
           Genius
         </h1>
       </Link>
-      {/* <SignButton/> */}
       {!!session ? (
         <div className="flex items-center gap-x-2">
           <Link href="/dashboard">
@@ -36,9 +31,6 @@ export const LandingNavbar = () => {
               Dashboard
             </Button>
           </Link>
-          {/* <button onClick={() => signOut()} className="rounded-full">
-            SignOut
-          </button> */}
         </div>
       ) : (
         <div className="flex items-center gap-x-2">

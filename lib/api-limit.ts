@@ -1,18 +1,16 @@
+import { getServerSession } from "next-auth/next";
+
 import prismadb from "@/lib/prismadb";
 import { MAX_FREE_COUNTS } from "@/constants";
-import { getServerSession } from "next-auth/next";
-// import { authOptions } from "../app/api/auth/[...nextauth]";
-// import { authOptions } from "../app/api/auth/[...nextauth]/route";
 import { authOptions } from '@/lib/auth-options'
+import { mountUserId } from "@/lib/utils";
 
 export const incrementApiLimit = async () => {
   const session = await getServerSession(authOptions)
-  const userId = session?.user?.name!
-  // const { userId } = auth();
-  // TODO: userId instead username
-  if (!userId) {
-    return;
-  }
+
+  if (!session) return;
+  
+  const userId = mountUserId(session)
 
   const userApiLimit = await prismadb.userApiLimit.findUnique({
     where: { userId: userId },
@@ -32,13 +30,10 @@ export const incrementApiLimit = async () => {
 
 export const checkApiLimit = async () => {
   const session = await getServerSession(authOptions)
-  const userId = session?.user?.name!
-  // const { userId } = auth();
-  // TODO: userId instead username
 
-  if (!userId) {
-    return false;
-  }
+  if (!session) return false;
+  
+  const userId = mountUserId(session)
 
   const userApiLimit = await prismadb.userApiLimit.findUnique({
     where: { userId: userId },
@@ -53,20 +48,16 @@ export const checkApiLimit = async () => {
 
 export const getApiLimitCount = async () => {
   const session = await getServerSession(authOptions)
-  const userId = session?.user?.name!
-  // const { userId } = auth();
-  // TODO: userId instead username
 
-  if (!userId) {
-    return 0;
-  }
+  if (!session) return 0;
+  
+  const userId = mountUserId(session)
 
   const userApiLimit = await prismadb.userApiLimit.findUnique({
     where: {
       userId
     }
   });
-
   if (!userApiLimit) {
     return 0;
   }

@@ -4,6 +4,9 @@ import { NextResponse } from "next/server"
 
 import prismadb from "@/lib/prismadb"
 import { stripe } from "@/lib/stripe"
+import { mountUserId } from "@/lib/utils"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "@/lib/auth-options"
 
 export async function POST(req: Request) {
   const body = await req.text()
@@ -27,14 +30,22 @@ export async function POST(req: Request) {
     const subscription = await stripe.subscriptions.retrieve(
       session.subscription as string
     )
+    
+    const authSession = await getServerSession(authOptions)
 
-    if (!session?.metadata?.userId) {
-      return new NextResponse("User id is required", { status: 400 });
+    if (!authSession || !authSession?.user) {
+      return new NextResponse("Login required", { status: 400 });
     }
 
+    if (!authSession?.user?.image || !authSession?.user?.email) {
+      return new NextResponse("Provider error", { status: 400 });
+    }
+    
+    const userId = mountUserId(authSession)
+  
     await prismadb.userSubscription.create({
       data: {
-        userId: session?.metadata?.userId,
+        userId: userId,
         stripeSubscriptionId: subscription.id,
         stripeCustomerId: subscription.customer as string,
         stripePriceId: subscription.items.data[0].price.id,
