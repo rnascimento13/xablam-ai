@@ -67,8 +67,11 @@ export async function POST(
     // }
 
     // return NextResponse.json(response.data.data);
-    console.log(headers, body)
-    return NextResponse.json(headers ,  body);
+    // console.log(headers, body)
+    // return NextResponse.json(headers ,  body);
+    const r1:any = NextResponse.json({ shit:'shit'})
+    console.log('mock route', r1)
+    return r1;
 
 
 

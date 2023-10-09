@@ -1,42 +1,25 @@
 import { NextResponse } from "next/server";
-// import { Configuration, OpenAIApi } from "openai";
+import { getServerSession } from "next-auth/next";
 
 import { checkSubscription } from "@/lib/subscription";
 import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
-import { json } from "stream/consumers";
-import { getServerSession } from "next-auth/next";
-// import { authOptions } from "../auth/[...nextauth]";
-// import { authOptions } from "../auth/[...nextauth]/route";
 import { authOptions } from '@/lib/auth-options'
-
-
-
-
-// const configuration = new Configuration({
-//   apiKey: process.env.OPENAI_API_KEY,
-// });
-
-// const openai = new OpenAIApi(configuration);
+import { mountUserId } from "@/lib/utils";
 
 export async function POST(
   req: Request
 ) {
   try {
     const session = await getServerSession(authOptions)
-    const userId = session?.user?.name!
-    // const { userId } = auth();
-    // TODO: userId instead username
-  
-    const body = await req.json();
-    const { prompt, amount = 1, resolution = "512x512" } = body;
 
-    if (!userId) {
+    if (!session?.user) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    // if (!configuration.apiKey) {
-    //   return new NextResponse("OpenAI API Key not configured.", { status: 500 });
-    // }
+    const userId = mountUserId(session)
+    const body = await req.json();
+    const { prompt, amount, resolution } = body;
+    const resolutionHW = resolution.split('x')
 
     if (!prompt) {
       return new NextResponse("Prompt is required", { status: 400 });
@@ -58,7 +41,6 @@ export async function POST(
     }
 
     const apiUrl = `https://api.runpod.ai/v2/${process.env.RUNPOD_API_ID}/runsync`
-    // const apiUrl = `http://localhost:3000/api/mock`
 
     console.log(apiUrl)
     const response = await fetch(apiUrl, {
@@ -66,13 +48,12 @@ export async function POST(
       headers: {
         'Accept': '*/*',
         'Content-Type': 'application/json',
-        // User-Agent: Thunder Client (https://www.thunderclient.com)
         'Authorization': `Bearer ${process.env.RUNPOD_API_KEY}`,
       },
       body: JSON.stringify({
         input: {
           api_name: 'txt2img',
-          prompt: 'blonde girl ponytail on a beach boardwalk cafe sitting at the table sandwich wearing a tanktop and shorts sneakers stuffed animals tropical beach beautiful cloudy sky bright sunny day, (Clutter-Home:0.8), (masterpiece:1.2) (photorealistic:1.2) (bokeh) (best quality) (detailed skin:1.3) (intricate details) (8k) (detailed eyes) (sharp focus)',
+          prompt: prompt || 'blonde girl ponytail on a beach boardwalk cafe sitting at the table sandwich wearing a tanktop and shorts sneakers stuffed animals tropical beach beautiful cloudy sky bright sunny day, (Clutter-Home:0.8), (masterpiece:1.2) (photorealistic:1.2) (bokeh) (best quality) (detailed skin:1.3) (intricate details) (8k) (detailed eyes) (sharp focus)',
           restore_faces: true,
           negative_prompt: '(AS-Young-Neg:1.3), (monochrome) (bad hands) (disfigured) (grain) (Deformed) (poorly drawn) (mutilated) (lowres) (deformed) (dark) (lowpoly) (CG) (3d) (blurry) (duplicate) (watermark) (label) (signature) (frames) (text), nsfw, nudity',
           seed: 3302206224,
@@ -80,27 +61,31 @@ export async function POST(
           cfg_scale: 5,
           sampler_index: 'DDIM',
           num_inference_steps: 20,
-          email: 'test@example.com'
+          width: resolutionHW[0],
+          height: resolutionHW[1],
+          batch_size: amount,
+          email: userId
         }
       }),
     })
 
     const data = await response.json()
-    console.log(data)
-    
-    return NextResponse.json(data);
-    // const response = await openai.createImage({
-    //   prompt,
-    //   n: parseInt(amount, 10),
-    //   size: resolution,
-    // });
 
-    // if (!isPro) {
-    //   await incrementApiLimit();
-    // }
+    const delay = data.delayTime;
+    const id = data.id;
+    const imgsData = await data.output.images;
+    const images = imgsData.map((e: string) => `data:image/gif;base64,${e}`)
+    const res = {
+      delay,
+      id,
+      images,
+    }
 
-    // return NextResponse.json(response.data.data);
-    // return NextResponse.json({ role: 'assistant', content: 'Hello! How can I assist you today?' });
+    if (!isPro) {
+      await incrementApiLimit();
+    }
+
+    return NextResponse.json(res);
   } catch (error) {
     console.log('[IMAGE_ERROR]', error);
     return new NextResponse("Internal Error", { status: 500 });
