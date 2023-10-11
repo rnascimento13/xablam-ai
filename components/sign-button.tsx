@@ -10,7 +10,6 @@ const SignButton = () => {
   if (session) {
     return (
       <div className="flex w-full justify-end">
-        <br />
         <button onClick={() => signOut({ callbackUrl:landingUrl })}>Sign out</button>
       </div>
     );

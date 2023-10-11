@@ -40,7 +40,7 @@ export async function POST(
       return new NextResponse("Free trial has expired. Please upgrade to pro.", { status: 403 });
     }
 
-    const apiUrl = `https://api.runpod.ai/v2/${process.env.RUNPOD_API_ID}/runsync`
+    const apiUrl = `https://api.runpod.ai/v2/${process.env.RUNPOD_API_ID}/run`
 
     console.log(apiUrl)
     const response = await fetch(apiUrl, {
@@ -51,6 +51,7 @@ export async function POST(
         'Authorization': `Bearer ${process.env.RUNPOD_API_KEY}`,
       },
       body: JSON.stringify({
+        webhook: "https://xablam-ai.loca.lt/api/image/webhook",
         input: {
           api_name: 'txt2img',
           prompt: prompt || 'blonde girl ponytail on a beach boardwalk cafe sitting at the table sandwich wearing a tanktop and shorts sneakers stuffed animals tropical beach beautiful cloudy sky bright sunny day, (Clutter-Home:0.8), (masterpiece:1.2) (photorealistic:1.2) (bokeh) (best quality) (detailed skin:1.3) (intricate details) (8k) (detailed eyes) (sharp focus)',
@@ -71,21 +72,16 @@ export async function POST(
 
     const data = await response.json()
 
-    const delay = data.delayTime;
-    const id = data.id;
-    const imgsData = await data.output.images;
-    const images = imgsData.map((e: string) => `data:image/gif;base64,${e}`)
-    const res = {
-      delay,
-      id,
-      images,
+    const imgId = data.id;
+    const status = data.status;
+    if (!(status == 'IN_QUEUE') ) {
+      return new NextResponse("Some error receiving the request.", { status: 400 });
     }
-
-    if (!isPro) {
-      await incrementApiLimit();
-    }
-
-    return NextResponse.json(res);
+    // if (!isPro) {
+    //   await incrementApiLimit();
+    // }
+    console.log('imagId: ', imgId)
+    return NextResponse.json({ status, imgId });
   } catch (error) {
     console.log('[IMAGE_ERROR]', error);
     return new NextResponse("Internal Error", { status: 500 });

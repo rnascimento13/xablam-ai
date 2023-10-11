@@ -3,7 +3,7 @@
 import * as z from "zod";
 import axios from "axios";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Download, ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -21,11 +21,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useProModal } from "@/hooks/use-pro-modal";
 
 import { amountOptions, formSchema, resolutionOptions } from "./constants";
+import Pusher from "pusher-js";
 
 const PhotoPage = () => {
   const proModal = useProModal();
   const router = useRouter();
   const [photos, setPhotos] = useState<string[]>([]);
+  // const [notifications, setNotifications] = useState([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [subscribe, setSubscribe] = useState<boolean>(false);
+  const [imgId, setimgId] = useState<string>('');
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -36,18 +41,17 @@ const PhotoPage = () => {
     }
   });
 
-  const isLoading = form.formState.isSubmitting;
+  // const isLoading = form.formState.isSubmitting;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setPhotos([]);
-
+      setIsLoading(true)
       const response = await axios.post('/api/image', values);
-      console.log('res: ',response)
-      const images = await response.data.images;
-      setPhotos(images);
-      console.log(photos.length)
-
+      const status = await response.data.status;
+      if (!(status == 'IN_QUEUE')) throw "Not in queue";
+      setimgId(await response.data.id)
+      setSubscribe(true)
     } catch (error: any) {
       if (error?.response?.status === 403) {
         proModal.onOpen();
@@ -58,6 +62,62 @@ const PhotoPage = () => {
       router.refresh();
     }
   }
+  
+  
+  useEffect(() => {
+    if (imgId == '') return
+    // Pusher subscribe
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
+    });
+
+    // console.log('subscribed: ', subscribe)
+    const channel = pusher.subscribe("chat");
+    setSubscribe(true)
+    channel.bind("chat-event", (data: any) => {
+      // setNotifications(data);
+      // console.log('subscribed data found')
+
+      const fetchData = async () => {
+        try {
+          const response = await axios.post('/api/image/status', data);
+          // TODO: error on wrong response
+
+          const images = await response.data.images;
+          setPhotos(images);
+          setIsLoading(false)
+          setimgId('')
+          // console.log('images returned: ', images.length, subscribe)
+        } catch (error: any) {
+          if (error?.response?.status === 403) {
+            proModal.onOpen();
+          } else {
+            toast.error("Something went wrong.");
+          }
+        } finally {
+          router.refresh();
+
+          // console.log('trying to unsubscribe: ', subscribe)
+          // if (subscribe == true) {
+          //   pusher.unsubscribe("chat");
+          //   console.log('unsubscribed')
+          //   setSubscribe(false)
+          // }
+    
+        }
+      }
+      fetchData()
+    });
+    return () => {
+      // console.log('trying to unsubscribe: ', subscribe)
+      if (subscribe == true) {
+        pusher.unsubscribe("chat");
+        // console.log('unsubscribed')
+        setSubscribe(false)
+      }
+
+    };
+  }, [imgId, proModal, router, subscribe]);
 
   return ( 
     <div>
