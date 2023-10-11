@@ -43,6 +43,7 @@ export async function POST(
     const apiUrl = `https://api.runpod.ai/v2/${process.env.RUNPOD_API_ID}/run`
 
     console.log(apiUrl)
+    console.log('webhook ', `${process.env.NEXT_PUBLIC_APP_URL}/api/image/webhook`)
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -51,7 +52,7 @@ export async function POST(
         'Authorization': `Bearer ${process.env.RUNPOD_API_KEY}`,
       },
       body: JSON.stringify({
-        webhook: "https://xablam-ai.loca.lt/api/image/webhook",
+        webhook: `${process.env.NEXT_PUBLIC_APP_URL}/api/image/webhook`,
         input: {
           api_name: 'txt2img',
           prompt: prompt || 'blonde girl ponytail on a beach boardwalk cafe sitting at the table sandwich wearing a tanktop and shorts sneakers stuffed animals tropical beach beautiful cloudy sky bright sunny day, (Clutter-Home:0.8), (masterpiece:1.2) (photorealistic:1.2) (bokeh) (best quality) (detailed skin:1.3) (intricate details) (8k) (detailed eyes) (sharp focus)',
@@ -80,7 +81,7 @@ export async function POST(
     // if (!isPro) {
     //   await incrementApiLimit();
     // }
-    console.log('imagId: ', imgId)
+    console.log('imgId: ', imgId)
     return NextResponse.json({ status, imgId });
   } catch (error) {
     console.log('[IMAGE_ERROR]', error);
