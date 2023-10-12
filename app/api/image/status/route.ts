@@ -16,7 +16,7 @@ export async function POST(
     const body = await req.json();
     // console.log('image/status in: ',body)
 
-    if (!(body.status) || !(body.id)) {
+    if (!body.id) {
       return new NextResponse("Unknow body", { status: 400 });
     }
   
