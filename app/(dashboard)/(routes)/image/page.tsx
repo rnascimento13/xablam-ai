@@ -3,7 +3,7 @@
 import * as z from "zod";
 import axios from "axios";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Download, ImageIcon } from "lucide-react";
 import { useForm } from "react-hook-form";
@@ -22,15 +22,15 @@ import { useProModal } from "@/hooks/use-pro-modal";
 
 import { amountOptions, formSchema, resolutionOptions } from "./constants";
 import Pusher from "pusher-js";
+import { PeriodicTimer } from "pusher-js/types/src/core/utils/timers";
 
 const PhotoPage = () => {
   const proModal = useProModal();
   const router = useRouter();
   const [photos, setPhotos] = useState<string[]>([]);
-  // const [notifications, setNotifications] = useState([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [subscribe, setSubscribe] = useState<boolean>(false);
-  const [imgId, setimgId] = useState<string>('');
+  const [img, setImg] = useState<ImgResponse>();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,16 +41,23 @@ const PhotoPage = () => {
     }
   });
 
-  // const isLoading = form.formState.isSubmitting;
+  type ImgResponse = {
+    delayTime?: number,
+    executionTime?: number,
+    id: string,
+    output?: { images:[], info: string, parameters: {}},
+    images?:[],
+    status: string,
+  }
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setPhotos([]);
       setIsLoading(true)
       const response = await axios.post('/api/image', values);
-      const status = await response.data.status;
-      if (!(status == 'IN_QUEUE')) throw "Not in queue";
-      setimgId(await response.data.id)
+      const data = response.data
+      if ( !(data) || !(data.status) || !(data.id) ) throw "Response Error";
+      setImg(data)
       setSubscribe(true)
     } catch (error: any) {
       if (error?.response?.status === 403) {
@@ -63,61 +70,63 @@ const PhotoPage = () => {
     }
   }
   
+  const handleFetchData = useCallback(() => {    
+    if (isLoading == false || img == undefined) return
+    const fetchData = async () => {
+      try {
+        const response = await axios.post('/api/image/status', { id:img.id } );
+        const data = response.data;
+        if ( !(data) || !(data.status) || !(data.id) ) throw "Response Error";
+        const { status } = data;
+        if ((status == 'IN_QUEUE') || (status == 'IN_PROGRESS')) return
+        if ((status == 'COMPLETED')) {
+          const images = data.images;
+          setPhotos(data.images);
+          setIsLoading(false)
+          setImg(undefined)
+        }
+      } catch (error: any) {
+        if (error?.response?.status === 403) {
+          proModal.onOpen();
+        } else {
+          toast.error("Something went wrong.");
+        }
+      } finally {
+        router.refresh();
+      }
+    }
+    fetchData()
+  }, [img, isLoading, proModal, router]);
+
   
   useEffect(() => {
-    if (imgId == '') return
+    if (img == undefined) return
     // Pusher subscribe
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
-
-    // console.log('subscribed: ', subscribe)
     const channel = pusher.subscribe("chat");
     setSubscribe(true)
-    channel.bind("chat-event", (data: any) => {
-      // setNotifications(data);
-      // console.log('subscribed data found')
-
-      const fetchData = async () => {
-        try {
-          const response = await axios.post('/api/image/status', data);
-          // TODO: error on wrong response
-
-          const images = await response.data.images;
-          setPhotos(images);
-          setIsLoading(false)
-          setimgId('')
-          // console.log('images returned: ', images.length, subscribe)
-        } catch (error: any) {
-          if (error?.response?.status === 403) {
-            proModal.onOpen();
-          } else {
-            toast.error("Something went wrong.");
-          }
-        } finally {
-          router.refresh();
-
-          // console.log('trying to unsubscribe: ', subscribe)
-          // if (subscribe == true) {
-          //   pusher.unsubscribe("chat");
-          //   console.log('unsubscribed')
-          //   setSubscribe(false)
-          // }
-    
-        }
-      }
-      fetchData()
+    channel.bind(img.id, (data: any) => {
+      if (img.status != 'COMPLETED') setImg(data)
+      handleFetchData()
     });
     return () => {
-      // console.log('trying to unsubscribe: ', subscribe)
       if (subscribe == true) {
         pusher.unsubscribe("chat");
-        // console.log('unsubscribed')
         setSubscribe(false)
       }
 
     };
-  }, [imgId, proModal, router, subscribe]);
+  }, [img, subscribe, handleFetchData]);
+
+  const MINUTE_MS = 10000;  // Time loop to fetch while loading
+  useEffect(() => {
+    if ((img == undefined) || img.status == 'COMPLETED' ) return
+    const interval = setInterval(() => { handleFetchData() }, MINUTE_MS);
+    return () => { clearInterval(interval) }; // Unmount function, to prevent memory leaks.
+  }, [img, handleFetchData])
+
 
   return ( 
     <div>
@@ -255,6 +264,5 @@ const PhotoPage = () => {
       </div>
     </div>
    );
-}
- 
+  }
 export default PhotoPage;

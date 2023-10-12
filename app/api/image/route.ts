@@ -6,10 +6,19 @@ import { incrementApiLimit, checkApiLimit } from "@/lib/api-limit";
 import { authOptions } from '@/lib/auth-options'
 import { mountUserId } from "@/lib/utils";
 
+type imgResponse = {
+  delayTime?: number,
+  executionTime?: number,
+  id: string,
+  output?: { images:[], info: string, parameters: {}}
+  status: string
+}
+
 export async function POST(
   req: Request
 ) {
   try {
+    // console.log('api/image access')
     const session = await getServerSession(authOptions)
 
     if (!session?.user) {
@@ -42,8 +51,8 @@ export async function POST(
 
     const apiUrl = `https://api.runpod.ai/v2/${process.env.RUNPOD_API_ID}/run`
 
-    console.log(apiUrl)
-    console.log('webhook ', `${process.env.NEXT_PUBLIC_APP_URL}/api/image/webhook`)
+    // console.log(apiUrl)
+    // console.log('webhook ', `${process.env.NEXT_PUBLIC_APP_URL}/api/image/webhook`)
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -73,16 +82,15 @@ export async function POST(
 
     const data = await response.json()
 
-    const imgId = data.id;
+    if (!(data as imgResponse)) throw "Response Error";
+
     const status = data.status;
-    if (!(status == 'IN_QUEUE') ) {
-      return new NextResponse("Some error receiving the request.", { status: 400 });
-    }
+    const id = data.id;
+
     // if (!isPro) {
     //   await incrementApiLimit();
     // }
-    console.log('imgId: ', imgId)
-    return NextResponse.json({ status, imgId });
+    return NextResponse.json({ status, id });
   } catch (error) {
     console.log('[IMAGE_ERROR]', error);
     return new NextResponse("Internal Error", { status: 500 });
