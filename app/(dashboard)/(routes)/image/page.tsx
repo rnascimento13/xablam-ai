@@ -127,7 +127,6 @@ const PhotoPage = () => {
     return () => { clearInterval(interval) }; // Unmount function, to prevent memory leaks.
   }, [img, handleFetchData])
 
-
   return ( 
     <div>
       <Heading
