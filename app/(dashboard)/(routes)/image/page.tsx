@@ -19,18 +19,20 @@ import { Loader } from "@/components/loader";
 import { Empty } from "@/components/ui/empty";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useProModal } from "@/hooks/use-pro-modal";
+import { useLooseModal } from "@/hooks/use-loose-modal";
 
 import { amountOptions, formSchema, resolutionOptions } from "./constants";
 import Pusher from "pusher-js";
-import { PeriodicTimer } from "pusher-js/types/src/core/utils/timers";
 
 const PhotoPage = () => {
   const proModal = useProModal();
+  const looseModal = useLooseModal();
   const router = useRouter();
   const [photos, setPhotos] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [subscribe, setSubscribe] = useState<boolean>(false);
+  const [isSubscribed, setIsSubscribed] = useState<boolean>(false);
   const [img, setImg] = useState<ImgResponse>();
+  const [sendValues, setSendValues] = useState<SendValues>();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -41,36 +43,57 @@ const PhotoPage = () => {
     }
   });
 
-  type ImgResponse = {
-    delayTime?: number,
-    executionTime?: number,
-    id: string,
-    output?: { images:[], info: string, parameters: {}},
-    images?:[],
-    status: string,
+  type SendValues = {
+    prompt: string, // must have
+    amount: string, // must have
+    resolution: string, // must have
   }
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    try {
-      setPhotos([]);
-      setIsLoading(true)
-      const response = await axios.post('/api/image', values);
-      const data = response.data
-      if ( !(data) || !(data.status) || !(data.id) ) throw "Response Error";
-      setImg(data)
-      setSubscribe(true)
-    } catch (error: any) {
-      if (error?.response?.status === 403) {
-        proModal.onOpen();
-      } else {
-        toast.error("Something went wrong.");
-      }
-    } finally {
-      router.refresh();
-    }
+  type ImgResponse = {
+    id: string, // must have
+    status: string, // must have
+    delayTime?: number,
+    executionTime?: number,
+    output?: { images:[], info: string, parameters: {}},
+    images?:[],
   }
+
+  const doSubmit = useCallback((values: SendValues) => {
+    const fetchData = async () => {
+      try {
+        setPhotos([]);
+        setIsLoading(true)
+        const response = await axios.post('/api/image', values);
+        const data = response.data
+        if ( !(data) || !(data.status) || !(data.id) ) throw "Response Error";
+        setImg(data)
+        setIsSubscribed(true)
+      } catch (error: any) {
+        if (error?.response?.status === 403) {
+          proModal.onOpen();
+        } else {
+          toast.error("Something went wrong.");
+        }
+      } finally {
+        router.refresh();
+      }
+    }
+    fetchData()
+  }, [proModal, router]);
+
+  const onSubmit = useCallback((values: z.infer<typeof formSchema>) => {
+    const { prompt, amount, resolution } = values
+    if (photos.length > 0 && !looseModal.confirm) {
+      setSendValues( { prompt, amount, resolution } )
+      looseModal.onOpen(); // ask before reset the images
+      return
+    } else {
+      doSubmit( { prompt, amount, resolution } )
+    }
+  }, [doSubmit, looseModal, photos.length]);
+
   
-  const handleFetchData = useCallback(() => {    
+  const handleFetchData = useCallback(() => { // will start image creation
     if (isLoading == false || img == undefined) return
     const fetchData = async () => {
       try {
@@ -80,10 +103,11 @@ const PhotoPage = () => {
         const { status } = data;
         if ((status == 'IN_QUEUE') || (status == 'IN_PROGRESS')) return
         if ((status == 'COMPLETED')) {
-          const images = data.images;
-          setPhotos(data.images);
+          const { images } = data;
+          setPhotos(images);
           setIsLoading(false)
           setImg(undefined)
+          setSendValues(undefined)
         }
       } catch (error: any) {
         if (error?.response?.status === 403) {
@@ -98,27 +122,21 @@ const PhotoPage = () => {
     fetchData()
   }, [img, isLoading, proModal, router]);
 
-  
-  useEffect(() => {
-    if (img == undefined) return
-    // Pusher subscribe
+  useEffect(() => { // Pusher subscribe
+    if ( (img == undefined || img.status == 'COMPLETED') ) return
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
     const channel = pusher.subscribe("chat");
-    setSubscribe(true)
     channel.bind(img.id, (data: any) => {
       if (img.status != 'COMPLETED') setImg(data)
       handleFetchData()
     });
     return () => {
-      if (subscribe == true) {
         pusher.unsubscribe("chat");
-        setSubscribe(false)
-      }
-
+        setIsSubscribed(false)
     };
-  }, [img, subscribe, handleFetchData]);
+  }, [img, handleFetchData]);
 
   const MINUTE_MS = 10000;  // Time loop to fetch while loading
   useEffect(() => {
@@ -126,6 +144,13 @@ const PhotoPage = () => {
     const interval = setInterval(() => { handleFetchData() }, MINUTE_MS);
     return () => { clearInterval(interval) }; // Unmount function, to prevent memory leaks.
   }, [img, handleFetchData])
+
+  useEffect(() => {
+    if ( (looseModal.confirm == true) && (sendValues != undefined) ) {
+      looseModal.confirm = false;
+      doSubmit(sendValues)
+    }
+  }, [looseModal, sendValues, doSubmit])
 
   return ( 
     <div>
@@ -160,7 +185,7 @@ const PhotoPage = () => {
                   <FormControl className="m-0 p-0">
                     <Input
                       className="border-0 outline-none focus-visible:ring-0 focus-visible:ring-transparent"
-                      disabled={isLoading} 
+                    disabled={isLoading} 
                       placeholder="A picture of a horse in Swiss alps" 
                       {...field}
                     />
