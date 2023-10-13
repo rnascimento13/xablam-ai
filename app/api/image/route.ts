@@ -66,8 +66,8 @@ export async function POST(
           api_name: 'txt2img',
           prompt: prompt || 'blonde girl ponytail on a beach boardwalk cafe sitting at the table sandwich wearing a tanktop and shorts sneakers stuffed animals tropical beach beautiful cloudy sky bright sunny day, (Clutter-Home:0.8), (masterpiece:1.2) (photorealistic:1.2) (bokeh) (best quality) (detailed skin:1.3) (intricate details) (8k) (detailed eyes) (sharp focus)',
           restore_faces: true,
-          negative_prompt: '(AS-Young-Neg:1.3), (monochrome) (bad hands) (disfigured) (grain) (Deformed) (poorly drawn) (mutilated) (lowres) (deformed) (dark) (lowpoly) (CG) (3d) (blurry) (duplicate) (watermark) (label) (signature) (frames) (text), nsfw, nudity',
-          seed: 3302206224,
+          negative_prompt: '(AS-Young-Neg:1.3), (monochrome) (bad hands) (disfigured) (grain) (Deformed) (poorly drawn) (mutilated) (lowres) (deformed) (dark) (lowpoly) (CG) (3d) (blurry) (duplicate) (watermark) (label) (signature) (frames) (text)',
+          seed: -1,
           override_settings: { sd_model_checkpoint: '' },
           cfg_scale: 5,
           sampler_index: 'DDIM',
@@ -82,11 +82,12 @@ export async function POST(
 
     const data = await response.json()
 
-    if (!(data as imgResponse)) throw "Response Error";
+    if (!(data.status) || !(data.id)) {
+      return new NextResponse("Unknow response", { status: 400 });
+    }
 
-    const status = data.status;
-    const id = data.id;
-
+    const { status, id } = data;
+    
     // if (!isPro) {
     //   await incrementApiLimit();
     // }
