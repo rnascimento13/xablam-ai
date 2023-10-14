@@ -2,7 +2,6 @@
 
 import axios from "axios";
 import { useState } from "react";
-import { Check, Zap } from "lucide-react";
 import { toast } from "react-hot-toast";
 
 import { 
@@ -15,13 +14,9 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useLooseModal } from "@/hooks/use-loose-modal";
-import { tools } from "@/constants";
-import { Card } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 
 export const LooseModal = () => { // ask before remove img
   const looseModal = useLooseModal();
-  const [loading, setLoading] = useState(false);
 
   const onConfirm = async () => {
     looseModal.onConfirm()
@@ -38,25 +33,14 @@ export const LooseModal = () => { // ask before remove img
             </div>
           </DialogTitle>
           <DialogDescription className="text-center pt-2 space-y-2 text-zinc-900 font-medium">
-            {tools.map((tool) => (
-              <Card key={tool.href} className="p-3 border-black/5 flex items-center justify-between">
-                <div className="flex items-center gap-x-4">
-                  <div className={cn("p-2 w-fit rounded-md", tool.bgColor)}>
-                    <tool.icon className={cn("w-6 h-6", tool.color)} />
-                  </div>
-                  <div className="font-semibold text-sm">
-                    {tool.label}
-                  </div>
-                </div>
-                <Check className="text-primary w-5 h-5" />
-              </Card>
-            ))}
+            <div className="font-semibold text-sm">
+              This will erase you previous image, do you want to continue?
+            </div>
           </DialogDescription>
         </DialogHeader>
         <DialogFooter>
-          <Button onClick={onConfirm} size="lg" variant="premium" className="w-full">
-            Upgrade
-            <Zap className="w-4 h-4 ml-2 fill-white" />
+          <Button onClick={onConfirm} size="lg" variant="default" className="object-left">
+            Confirm
           </Button>
         </DialogFooter>
       </DialogContent>
